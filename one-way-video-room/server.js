@@ -13,21 +13,20 @@ let devId = null;
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
-  // Assign dev if there is no dev
   if (!devId) {
     devId = socket.id;
     console.log("Dev assigned:", devId);
     socket.emit("role", "dev");
   } else {
-    // Everyone else is a user
     socket.emit("role", "user");
-    socket.emit("dev-id", devId); // tell the user who the dev is
+    socket.emit("dev-id", devId);
+
+    // Notify dev of new user
+    io.to(devId).emit("new-user", socket.id);
   }
 
   socket.on("offer", (data) => {
-    if (devId) {
-      io.to(devId).emit("offer", { from: socket.id, sdp: data.sdp });
-    }
+    if (devId) io.to(devId).emit("offer", { from: socket.id, sdp: data.sdp });
   });
 
   socket.on("answer", (data) => {
@@ -40,9 +39,20 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
+
+    // Notify dev of disconnected user
+    if (socket.id !== devId && devId) {
+      io.to(devId).emit("user-disconnected", socket.id);
+    }
+
     if (socket.id === devId) {
       devId = null;
       console.log("Dev left, next user to connect will become dev.");
     }
   });
+});
+
+const PORT = 3000;
+server.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
 });

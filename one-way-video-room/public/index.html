@@ -24,11 +24,12 @@
       localStream = await navigator.mediaDevices.getUserMedia({ video: true });
       const localVideo = document.createElement("video");
       localVideo.autoplay = true;
-      localVideo.muted = true;
+      localVideo.muted = true; // prevent echo
       localVideo.srcObject = localStream;
       videosDiv.appendChild(localVideo);
     }
 
+    // Assign role
     socket.on("role", (r) => {
       role = r;
       startCamera();
@@ -40,6 +41,26 @@
       connectToDev();
     });
 
+    // DEV: notified of new users
+    socket.on("new-user", (userId) => {
+      console.log("New user connected:", userId);
+    });
+
+    // DEV: notified of user disconnect
+    socket.on("user-disconnected", (userId) => {
+      console.log("User disconnected:", userId);
+      if (peers[userId]) {
+        peers[userId].close();
+        delete peers[userId];
+      }
+      // Remove their video
+      const videos = Array.from(videosDiv.getElementsByTagName("video"));
+      videos.forEach(video => {
+        if (video.dataset.id === userId) video.remove();
+      });
+    });
+
+    // Users connect to dev
     async function connectToDev() {
       if (role !== "user" || !devId) return;
 
@@ -71,6 +92,7 @@
         const remoteVideo = document.createElement("video");
         remoteVideo.autoplay = true;
         remoteVideo.srcObject = event.streams[0];
+        remoteVideo.dataset.id = data.from; // tag video with user id
         videosDiv.appendChild(remoteVideo);
       };
 
