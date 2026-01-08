@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>One‑Way Dev Camera Room</title>
+  <style>
+    video { width: 240px; margin: 5px; border: 1px solid black; }
+  </style>
+</head>
+<body>
+  <h1>Camera Room</h1>
+  <div id="videos"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const videos = document.getElementById("videos");
+    let role;
+    let localStream;
+    const peers = {};
+
+    async function startCamera() {
+      localStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const v = document.createElement("video");
+      v.autoplay = true;
+      v.muted = true;
+      v.srcObject = localStream;
+      videos.appendChild(v);
+    }
+
+    socket.on("role", async (r) => {
+      role = r;
+      await startCamera();
+      if (role === "user") connectToDev();
+    });
+
+    socket.on("offer", async ({ from, sdp }) => {
+      if (role !== "dev") return;
+
+      const pc = new RTCPeerConnection();
+      peers[from] = pc;
+
+      pc.ontrack = e => {
+        const v = document.createElement("video");
+        v.autoplay = true;
+        v.srcObject = e.streams[0];
+        videos.appendChild(v);
+      };
+
+      await pc.setRemoteDescription(sdp);
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      socket.emit("answer", { to: from, sdp: answer });
+    });
+
+    async function connectToDev() {
+      const pc = new RTCPeerConnection();
+      peers["dev"] = pc;
+
+      localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+
+      pc.onicecandidate = e => {
+        if (e.candidate) socket.emit("ice-candidate", { to: "dev", candidate: e.candidate });
+      };
+
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      socket.emit("offer", { sdp: offer });
+    }
+  </script>
+</body>
+</html>

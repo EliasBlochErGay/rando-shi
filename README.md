@@ -1,2 +1,0 @@
-# rando-shi
-random
