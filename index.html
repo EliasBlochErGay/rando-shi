@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ASCII Webcam — rando-shi</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>ASCII Webcam</h1>
+    <p class="muted">Uses your webcam and converts live video to ASCII art in the browser. Works on <strong>localhost</strong>.</p>
+  </header>
+
+  <main>
+    <section class="controls">
+      <button id="startBtn">Start</button>
+      <button id="stopBtn" disabled>Stop</button>
+      <label>Density: <input id="density" type="range" min="2" max="24" value="8" /></label>
+      <label>Charset: <select id="charset"><option value="@%#*+=-:. ">@%#*+=-:. </option><option value="$@B%8&WM#*oahkbdpqwmZ0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ">$@B%8&WM#*oahkbdpqwmZ0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,"^`'. </option></select></label>
+      <label><input id="invert" type="checkbox" /> Invert</label>
+      <label><input id="color" type="checkbox" /> Color</label>
+      <button id="snapshot">Snapshot</button>
+      <button id="fullscreen">Fullscreen</button>
+    </section>
+
+    <section class="viewer">
+      <video id="video" autoplay playsinline style="display:none"></video>
+      <canvas id="hiddenCanvas" style="display:none"></canvas>
+      <div id="output" class="ascii" aria-live="polite"></div>
+    </section>
+
+    <section class="tips">
+      <h3>Tips</h3>
+      <ul>
+        <li>Grant camera permission when prompted.</li>
+        <li>Use higher density for finer detail (slower), lower for performance.</li>
+        <li>Color mode renders each character in the sampled color.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <small>Built with ❤️ — local-only, no uploads.</small>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

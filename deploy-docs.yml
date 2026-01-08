@@ -1,0 +1,40 @@
+name: Deploy web → docs branch
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Deploy web folder to docs branch
+        env:
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: github-actions[bot]@users.noreply.github.com
+        run: |
+          git config user.name "$GIT_COMMITTER_NAME"
+          git config user.email "$GIT_COMMITTER_EMAIL"
+          git fetch origin
+          if git rev-parse --verify origin/docs >/dev/null 2>&1; then
+            git checkout --detach origin/docs
+            git checkout -B docs
+          else
+            git checkout --orphan docs
+          fi
+          # remove old files (keep .git)
+          git rm -rf . || true
+          cp -r web/. .
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to deploy"
+          else
+            git commit -m "Deploy web to docs [skip ci]"
+            git push origin docs --force
+          fi
